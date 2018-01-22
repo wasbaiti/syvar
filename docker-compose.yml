@@ -1,0 +1,38 @@
+version: '2'
+
+services:
+    db:
+        image: mysql
+        volumes:
+            - "./.data/db:/var/lib/mysql"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    php:
+        build:
+            context: config/docker/php7-fpm
+            args:
+                TIMEZONE: ${TIMEZONE}
+        volumes:
+            - .:/var/www/symfony
+            - ./logs/symfony:/var/www/symfony/app/logs
+    nginx:
+        build: config/docker/nginx
+        ports:
+            - 8080:80
+        volumes_from:
+            - php
+        volumes:
+            - ./logs/nginx/:/var/log/nginx
+    elk:
+        image: willdurand/elk
+        ports:
+            - 81:80
+        volumes:
+            - ./config/docker/elk/logstash:/etc/logstash
+            - ./config/docker/elk/logstash/patterns:/opt/logstash/patterns
+        volumes_from:
+            - php
+            - nginx
